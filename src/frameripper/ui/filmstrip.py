@@ -131,7 +131,10 @@ class Filmstrip(QWidget):
             self.stepRequested.emit(-steps * self.step)
 
     def paintEvent(self, e) -> None:
-        p = QPainter(self)
+        with QPainter(self) as p:
+            self._paint(p)
+
+    def _paint(self, p: QPainter) -> None:
         p.fillRect(self.rect(), QColor(theme.SURFACE))
         p.setRenderHint(QPainter.Antialiasing)
         small = QFont(self.font())
@@ -172,7 +175,6 @@ class Filmstrip(QWidget):
                 p.setPen(QPen(QColor(theme.ACCENT), 2))
                 p.setBrush(Qt.NoBrush)
                 p.drawRoundedRect(rect.adjusted(-1, -1, 1, 1), 3, 3)
-        p.end()
 
     def _star(self, p: QPainter, rect: QRectF, color: str, filled: bool) -> None:
         r = QRectF(rect.right() - 17, rect.top() + 3, 14, 14)

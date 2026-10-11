@@ -89,3 +89,18 @@ def test_open_failure(tmp_path):
     bad.write_bytes(b"not a video")
     with pytest.raises(VideoOpenError):
         build_index(bad)
+
+
+def test_narrow_output_is_contiguous(h264_clip):
+    # 61 px wide rows are 183 bytes, which FFmpeg pads; Qt needs packed rows.
+    from PySide6.QtGui import QImage
+
+    from frameripper.ui.viewer import to_qimage
+
+    index = build_index(h264_clip)
+    with FrameDecoder(index) as dec:
+        rgb = to_rgb(dec.get(0), index, 61, 108)
+    assert rgb.shape == (46, 61, 3)
+    assert rgb.flags["C_CONTIGUOUS"]
+    img = to_qimage(rgb)
+    assert (img.width(), img.height(), img.format()) == (61, 46, QImage.Format_RGB888)

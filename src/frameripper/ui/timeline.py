@@ -132,10 +132,12 @@ class Timeline(QWidget):
         return self._heat
 
     def paintEvent(self, e) -> None:
-        p = QPainter(self)
+        with QPainter(self) as p:
+            self._paint(p)
+
+    def _paint(self, p: QPainter) -> None:
         p.fillRect(self.rect(), QColor(theme.SURFACE))
         if not self._count:
-            p.end()
             return
         t = self._track()
         heat_rect = QRectF(t.left(), t.top() + 2, t.width(), HEAT_H)
@@ -192,4 +194,3 @@ class Timeline(QWidget):
         p.setPen(Qt.NoPen)
         p.setBrush(QColor(theme.ACCENT))
         p.drawEllipse(QPointF(x, t.top() - 1), 4.5, 4.5)
-        p.end()

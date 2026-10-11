@@ -247,7 +247,11 @@ class Viewer(QWidget):
     # -- painting --------------------------------------------------------------
 
     def paintEvent(self, e) -> None:
-        p = QPainter(self)
+        # The context manager ends the painter even if drawing raises.
+        with QPainter(self) as p:
+            self._paint(p)
+
+    def _paint(self, p: QPainter) -> None:
         p.fillRect(self.rect(), QColor(theme.VIEWER_BG))
 
         if self._img is not None:
@@ -264,7 +268,6 @@ class Viewer(QWidget):
             self._paint_badge(p)
         if self._toast:
             self._paint_toast(p)
-        p.end()
 
     def _paint_message(self, p: QPainter, text: str) -> None:
         f = QFont(self.font())

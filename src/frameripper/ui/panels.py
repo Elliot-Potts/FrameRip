@@ -48,7 +48,10 @@ class HoverPreview(QWidget):
         self.update()
 
     def paintEvent(self, e) -> None:
-        p = QPainter(self)
+        with QPainter(self) as p:
+            self._paint(p)
+
+    def _paint(self, p: QPainter) -> None:
         p.setRenderHint(QPainter.Antialiasing)
         p.setPen(QColor(theme.BORDER))
         p.setBrush(QColor(theme.RAISED))
@@ -61,7 +64,6 @@ class HoverPreview(QWidget):
             p.fillRect(img_rect, QColor(theme.BG))
         p.setPen(QColor(theme.TEXT))
         p.drawText(QRectF(0, img_rect.bottom() + 2, self.width(), 20), Qt.AlignCenter, self._text)
-        p.end()
 
 
 class MarksPanel(QWidget):
@@ -161,17 +163,16 @@ class MarksPanel(QWidget):
         size = self.list.iconSize()
         pm = QPixmap(size)
         pm.fill(QColor(theme.RAISED))
-        p = QPainter(pm)
-        if arr is not None:
-            img = to_qimage(arr)
-            s = min(size.width() / img.width(), size.height() / img.height())
-            target = QRectF(0, 0, img.width() * s, img.height() * s)
-            target.moveCenter(QRectF(pm.rect()).center())
-            p.setRenderHint(QPainter.SmoothPixmapTransform)
-            p.drawImage(target, img)
-        p.setPen(QColor(theme.SUGGESTED if suggested else theme.ACCENT))
-        p.drawRect(QRectF(pm.rect()).adjusted(0.5, 0.5, -0.5, -0.5))
-        p.end()
+        with QPainter(pm) as p:
+            if arr is not None:
+                img = to_qimage(arr)
+                s = min(size.width() / img.width(), size.height() / img.height())
+                target = QRectF(0, 0, img.width() * s, img.height() * s)
+                target.moveCenter(QRectF(pm.rect()).center())
+                p.setRenderHint(QPainter.SmoothPixmapTransform)
+                p.drawImage(target, img)
+            p.setPen(QColor(theme.SUGGESTED if suggested else theme.ACCENT))
+            p.drawRect(QRectF(pm.rect()).adjusted(0.5, 0.5, -0.5, -0.5))
         return QIcon(pm)
 
     def refresh(self) -> None:

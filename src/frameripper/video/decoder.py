@@ -176,8 +176,10 @@ def to_rgb(
     ).to_ndarray()
 
     if index.rotation:
-        rgb = np.ascontiguousarray(np.rot90(rgb, k=index.rotation // 90))
-    return rgb
+        rgb = np.rot90(rgb, k=index.rotation // 90)
+    # FFmpeg pads rows to 16 bytes, so narrow outputs come back as strided views.
+    # Qt and the caches need tightly packed rows.
+    return np.ascontiguousarray(rgb)
 
 
 def to_gray(frame: av.VideoFrame, width: int) -> np.ndarray:
