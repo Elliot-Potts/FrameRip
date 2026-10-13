@@ -2,18 +2,21 @@ from __future__ import annotations
 
 import numpy as np
 
-from frameripper.analysis.sharpness import normalise
+from frameripper.analysis.sharpness import FEATURELESS, normalise
 
 MOTION_PENALTY = 0.35
 MOTION_FULL_SCALE = 0.08
 CUT_GUARD = 2  # frames either side of a cut that are likely blended
+MIN_QUALITY = 0.05  # scenes whose best frame is among the very softest get no pick
 
 
 def quality(sharpness: np.ndarray, motion: np.ndarray) -> np.ndarray:
     sharp = normalise(sharpness)
     # Motion is mean abs frame difference; around 0.08 is already a fast pan.
     mot_n = np.clip(np.nan_to_num(motion, nan=0.0) / MOTION_FULL_SCALE, 0, 1)
-    return np.nan_to_num(sharp, nan=-1.0) - MOTION_PENALTY * mot_n
+    q = np.nan_to_num(sharp, nan=-1.0) - MOTION_PENALTY * mot_n
+    q[np.nan_to_num(sharpness, nan=0.0) < FEATURELESS] = -1.0
+    return q
 
 
 def detect_cuts(change: np.ndarray, threshold: float = 0.35, min_gap: int = 8) -> list[int]:
@@ -45,8 +48,7 @@ def _best_in(q: np.ndarray, start: int, end: int, guarded: np.ndarray) -> int | 
     if not np.isfinite(seg).any():
         seg = q[start:end]
     best = int(np.argmax(seg))
-    # Unanalysed frames score -1 or below; analysed ones never drop under -MOTION_PENALTY.
-    if seg[best] < -0.5:
+    if seg[best] < MIN_QUALITY:
         return None
     return start + best
 

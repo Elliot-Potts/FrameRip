@@ -189,9 +189,8 @@ class MarksPanel(QWidget):
             suggested = self._marks.is_suggested(n)
             score = self._analysis.score(n) if self._analysis is not None else None
             score_txt = f"sharp {score:.0f}" if score is not None else "sharp --"
-            text = f"Frame {n}\n{display_timecode(self._index.time_of(n))}\n{score_txt}"
-            if suggested:
-                text += "  • suggested"
+            label = ("☆ " if suggested else "★ ") + f"Frame {n}"
+            text = f"{label}\n{display_timecode(self._index.time_of(n))}\n{score_txt}"
             item = QListWidgetItem(self._icon(n, suggested), text)
             item.setData(Qt.UserRole, n)
             if suggested:

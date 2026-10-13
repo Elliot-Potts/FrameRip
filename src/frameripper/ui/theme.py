@@ -86,7 +86,17 @@ QProgressBar::chunk {{ background: {ACCENT}; border-radius: 3px; }}
 QSlider::groove:horizontal {{ height: 4px; background: {BORDER}; border-radius: 2px; }}
 QSlider::handle:horizontal {{ width: 14px; margin: -6px 0; border-radius: 7px;
                               background: {ACCENT}; }}
+QSlider::handle:horizontal:disabled {{ background: {MUTED}; }}
 QRadioButton, QCheckBox {{ spacing: 8px; }}
+QRadioButton::indicator, QCheckBox::indicator {{ width: 14px; height: 14px;
+               border: 1px solid #4a4d55; background: {BG}; }}
+QRadioButton::indicator {{ border-radius: 8px; }}
+QCheckBox::indicator {{ border-radius: 4px; }}
+QRadioButton::indicator:hover, QCheckBox::indicator:hover {{ border-color: {ACCENT}; }}
+QRadioButton::indicator:checked {{ border-color: {ACCENT};
+               background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5,
+               stop:0 {ACCENT}, stop:0.5 {ACCENT}, stop:0.6 {BG}, stop:1 {BG}); }}
+QCheckBox::indicator:checked {{ border-color: {ACCENT}; background: {ACCENT}; }}
 QLabel#Muted {{ color: {MUTED}; }}
 QLabel#Heading {{ font-size: 11pt; font-weight: 600; }}
 QScrollBar:vertical {{ background: transparent; width: 10px; }}

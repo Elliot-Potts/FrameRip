@@ -53,11 +53,21 @@ def test_small_motion_and_histogram(texture):
 
 
 def test_normalise_keeps_nan():
-    v = np.array([0, 1, 4, np.nan, 100], dtype=np.float32)
+    v = np.array([5, 50, 200, np.nan, 5000], dtype=np.float32)
     out = normalise(v)
     assert np.isnan(out[3])
     assert out[4] == pytest.approx(1.0)
     assert 0 <= out[0] < out[1] < out[2] < 1
+
+
+def test_normalise_ignores_outliers():
+    # A few credit frames with crisp text shouldn't push real footage to the bottom.
+    rng = np.random.default_rng(0)
+    film = rng.uniform(100, 400, 950)
+    credits = np.full(50, 50_000.0)
+    out = normalise(np.concatenate([film, credits]).astype(np.float32))
+    assert 0.3 < float(np.median(out[:950])) < 0.8
+    assert out[950:].min() == pytest.approx(1.0)
 
 
 def test_local_peaks():
@@ -89,10 +99,20 @@ def test_pick_per_scene_avoids_motion_and_cuts():
     assert picks == [20, 60]
 
 
+def test_pick_per_scene_skips_featureless_scenes():
+    sharp = np.full(60, 50.0, dtype=np.float32)
+    sharp[30:] = 0.01  # a black or faded-out scene
+    zero = np.zeros(60, dtype=np.float32)
+    change = zero.copy()
+    change[30] = 0.9
+    picks = autopick.pick_per_scene(sharp, zero, change)
+    assert len(picks) == 1 and picks[0] < 30
+
+
 def test_pick_per_window():
     times = np.arange(90) / 30.0
-    sharp = np.ones(90, dtype=np.float32)
-    sharp[[5, 40, 85]] = 10
+    sharp = np.full(90, 100.0, dtype=np.float32)
+    sharp[[5, 40, 85]] = 1000
     zero = np.zeros(90, dtype=np.float32)
     assert autopick.pick_per_window(sharp, zero, zero, times, 1.0) == [5, 40, 85]
 
@@ -100,8 +120,8 @@ def test_pick_per_window():
 def test_pick_skips_unanalysed():
     times = np.arange(60) / 30.0
     sharp = np.full(60, np.nan, dtype=np.float32)
-    sharp[:30] = 1
-    sharp[12] = 5
+    sharp[:30] = 100
+    sharp[12] = 500
     zero = np.zeros(60, dtype=np.float32)
     assert autopick.pick_per_window(sharp, zero, zero, times, 1.0) == [12]
 

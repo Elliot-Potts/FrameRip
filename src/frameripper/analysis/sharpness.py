@@ -6,6 +6,8 @@ ANALYSIS_WIDTH = 640
 GRID_COLS = 8
 TOP_FRACTION = 0.25
 HIST_BINS = 32
+FEATURELESS = 10.0  # raw score of black frames, flat fades and the like
+MIN_LOG_SPAN = float(np.log(4.0))
 
 
 def tile_sharpness(gray: np.ndarray, cols: int = GRID_COLS, top: float = TOP_FRACTION) -> float:
@@ -60,22 +62,22 @@ def hist_change(prev: np.ndarray | None, cur: np.ndarray) -> float:
     return float(np.abs(prev - cur).sum() / 2.0)
 
 
-def normalise(values: np.ndarray, pct: float = 98.0) -> np.ndarray:
+def normalise(values: np.ndarray) -> np.ndarray:
     """Map raw sharpness to 0..1 relative to this video, NaN preserved.
 
-    Laplacian variance grows with the square of edge contrast, so compare on
-    the square root to keep the scale perceptually even.
+    Works on a log scale between the 5th and 95th percentiles, so a handful of
+    extreme frames (credits, title cards) can't squash the rest of the video.
+    The span never drops below 4x so near-uniform footage isn't stretched into
+    a red-to-green spread by noise.
     """
     out = np.full(values.shape, np.nan, dtype=np.float32)
     valid = ~np.isnan(values)
     if not valid.any():
         return out
-    root = np.sqrt(np.maximum(values[valid], 0))
-    ref = np.percentile(root, pct)
-    if ref <= 0:
-        out[valid] = 0
-    else:
-        out[valid] = np.clip(root / ref, 0, 1)
+    logs = np.log(np.maximum(values[valid], FEATURELESS))
+    lo, hi = np.percentile(logs, [5, 95])
+    span = max(hi - lo, MIN_LOG_SPAN)
+    out[valid] = np.clip((logs - lo) / span, 0, 1)
     return out
 
 
